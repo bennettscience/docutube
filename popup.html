@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <base target="_top">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
+    <link rel="stylesheet" href="https://ssl.gstatic.com/docs/script/css/add-ons.css">
+    <style>
+      .search {
+        width: 80%;
+        margin: 0 auto;
+      }
+      
+      .search > input[type="text"] { width: 60%; margin-right: 10px; }
+      .search > #search-args { width: 60%; }
+      
+      #search-result {
+        margin-top:15px;
+        min-height: 400px;
+        display: flex;
+        display: -webkit-flex;
+        flex-wrap: wrap;
+        flex-direction: row;
+        justify-content: space-evenly;
+        align-items: center;
+        align-content: center;
+      }
+      
+      #search-result > div { transition: box-shadow ease-in-out 0.25s; width: 300px; height: 180px }
+      #search-result > .video-container:hover { box-shadow: 0 0 5px blue; cursor: pointer; }
+      
+      #pagination { 
+        display: none; 
+        text-align: right;
+        margin-right: 20px;
+      }
+      
+      #preview {
+        margin: 15px auto 0;
+      }
+      
+      .settings { 
+        display: inline-block; 
+        vertical-align: middle;
+        width: 25%;
+        position: relative;
+      }
+      
+      #preview iframe { vertical-align: middle; }
+      
+      #preview iframe + .settings {
+        margin-left: 30px;
+      }
+      
+      .settings > label { 
+        line-height: 36px;
+      }
+      
+      #link-text { 
+        visibility: hidden;
+        font-size: 18px;
+        margin-bottom: 15px;
+        margin-left: 15px;
+        width: 60%;
+      }
+      
+      #toggle:checked ~ #link-text {
+        visibility: visible;
+      }
+      
+      .settings > button {
+        display: block;
+        margin-bottom: 15px;
+      }
+      
+      .video-container {
+        background-position: center center;
+        background-size: cover;
+        position: relative;
+        flex: 0 0 auto;
+        margin: 5px;
+      }
+      
+      .type-icon {
+        display: block;
+        position: absolute;
+        bottom: 10px;
+        right: 10px;
+        height:32px;
+        width: 32px;
+      }
+      
+      .action-container {
+        display: block;
+        position: absolute;
+        top:50%;
+        transform: translateY(-50%);
+        height: 65px;
+        background-color: rgba(250,250,250, 0.75);
+        width: 100%;
+        text-align:center;
+        opacity: 0;
+        transition: all ease-in-out 0.5s;
+      }
+      
+      .action-container > span {
+        padding: 5px;
+        line-height: 65px;
+        font-size: 24px;
+      }
+      
+      span:hover {
+        cursor: pointer;
+        transition: all ease-in-out 0.15s;
+      }
+      
+      .video-container:hover > .action-container {
+        opacity: 1;
+      }
+      
+      #embed { width:100%; font-family:sans-serif; }
+      #srcSelect { width:100%; margin-bottom: 10px; }
+      #srcSelect span { 
+        display: inline-block; 
+        margin-right: 15px; 
+        color:rgba(255, 255, 255, 1); 
+        background-color: rgba(0,0,255,0.8);
+        cursor:pointer; 
+        border-radius:3px;
+        border:1px solid rgba(0,0,180,0.8);
+        padding: 12px;
+      }
+      #srcSelect span:hover { color:rgba(0, 0, 180, 1); background-color: rgba(255,255,255,0.8); }
+      
+    </style>
+  </head>
+  <body>
+  <div class="search">
+  <input type="text" id="search-input" value=""/>
+  <button id="search-btn" class="action" onclick="search(null)">Search</button>
+  <button onclick="document.querySelector('#search-result').innerHTML = ''">Clear</button>
+  <div id="search-args">
+    <label><input type="checkbox" name="queryArg" value="video" checked="checked"/>Videos</label>
+    <label><input type="checkbox" name="queryArg" value="channel" />Channels</label>
+    <label><input type="checkbox" name="queryArg" value="playlist" />Playlists</label>
+  </div>
+  </div>
+  <div id="preview"></div>
+  <div id="pagination">
+  <button id="prev" data-page="" onclick="getPage(this)">Previous</button>
+  <button id="next" data-page="" onclick="getPage(this)">Next</button>
+  </div>
+  <div id="search-result"></div>
+  </body>
+  <script type="text/javascript"> 
+   function embed(id) {
+   
+     console.log(id);
+     
+     var text;
+     
+     let checked = document.querySelector('input[type="radio"]:checked').value;
+     
+     if(checked === 'string') {
+        text = document.querySelector('input[name="link-text"]').value;
+     }
+     
+     let prefs = {
+       "type": checked,
+       "string": text
+     };
+     
+     google.script.run.withSuccessHandler(function(url) {
+       
+         navigator.permissions.query({name: "clipboard-write"}).then(result => {
+          if (result.state == "granted" || result.state == "prompt") {
+            navigator.clipboard.writeText(url);
+            alert('URL copied to clipboard');
+          }
+        });
+     
+     }).DTApi('DT', 'embed', id, prefs);
+     
+   }
+     
+   function previewEmbed(id) {
+
+     google.script.run.withSuccessHandler(function(result){
+     
+       let container = document.querySelector("#preview");
+       
+       console.log(container);
+       
+       let data = JSON.parse(result);
+       
+       let settings = function(id, title) {
+         
+         const template = "<div class='settings'> \
+                             <h2>Settings</h2> \
+                             <p>How do you want to link your video?</p> \
+                             <input type='radio' id='copy-radio' name='embed-type' value='copy' /><label for='copy-radio'>Copy link</label/> \
+                             <br /> \
+                             <input type='radio' id='thumbnail-radio' name='embed-type' value='thumbnail' /><label for='thumbnail-radio'>Thumbnail</label> \
+                             <br /> \
+                             <input type='radio' id='toggle' name='embed-type' value='string' /><label for='toggle'>Text</label> \
+                             <input type='text' id='link-text' name='link-text' value='" + title + "' /> \
+                             <div id='settings-action'> \
+                             <button class='action' onclick='embed(this.parentNode.parentNode.parentNode.dataset.vidid)'>Get Video</button> \
+                             <button onclick='this.parentNode.parentNode.parentNode.parentNode.removeChild(this.parentNode.parentNode.parentNode)'>Cancel</button> \
+                             </div>\
+                           </div>";
+          
+          return template;
+       
+       }
+       
+       let previewContainer = document.createElement('div');
+       previewContainer.setAttribute('class', 'preview-container');
+       previewContainer.dataset.vidid = data.vidId;
+       previewContainer.innerHTML = data.data.embedHtml;
+       container.appendChild(previewContainer);
+       
+       previewContainer.insertAdjacentHTML('beforeend', settings(id, data.title));
+       
+       window.scroll({top: 0, left: 0, behavior: 'smooth'});
+       
+     }).DTApi('DT', 'preview', id);
+   
+   }
+   
+   function search(page, key) {
+
+      // If there's a page token, set it
+      var pageToken = page || "";
+      var key = key || "";
+      
+      let term = document.querySelector('#search-input').value;
+      let checked = document.querySelectorAll('input[name="queryArg"]:checked');
+      let prev = document.querySelector("#prev");
+      let next = document.querySelector("#next");
+      let total = document.querySelector("#total-results");
+      
+      // Get the checked search types
+      let args = {};
+      args.types = [];
+      
+      checked.forEach(function(el) {
+        args.types.push(el.value);
+      });
+      
+      args.pageToken = page;
+      args.key = key;
+      
+      const container = document.querySelector('#search-result');
+      container.innerText = ('Searching...');
+
+      google.script.run.withSuccessHandler(function(result) {
+      container.innerText = '';
+        let data = JSON.parse(result);
+        
+        let videoContainers = [];
+        
+        for(var i=0; i<data.data.length; i++) {
+          videoContainers.push(data.data.splice(0, 10))
+        }
+        
+        console.log(videoContainers);
+        
+        videoContainers.forEach(function(items) {
+          items.forEach(function(vid) {
+            container.insertAdjacentHTML('beforeend', vid);
+          });
+        });
+        
+        if(data.nextPage == undefined) {
+          next.disabled = true;
+        } else {
+          next.disabled = false;
+          next.dataset.page = data.nextPage;
+          next.dataset.cachekey = data.nextKey;
+        }
+        
+        if(data.prevPage == undefined) {
+          prev.disabled = true;
+        } else {
+          prev.disabled = false;
+          prev.dataset.page = data.prevPage;
+          prev.dataset.cachekey = data.prevKey;
+        }
+        
+        document.querySelector('#pagination').style.display = 'block';
+
+      }).DTApi('DT', 'search', term, args);
+    }
+    
+    function getPage(el) {
+      
+      let page = el.dataset.page;
+      let key = el.dataset.cachekey;
+
+      search(page, key)
+      
+    }
+    
+    function paginate(array, page) {
+      
+      return array.slice(page*10, 10)
+    
+    }
+    
+    $("#doc").click(function() {
+      google.script.run.withSuccessHandler(showFrames).getVideos();
+    })
+    
+    $("#comments").click(function() {
+      google.script.run.withSuccessHandler(showFrames).getCommentData();
+    });
+    
+    function showFrames(frames) {
+      $("#embed").empty();
+      console.log(frames.length);
+      for(var i=0; i<frames.length; i++) {
+        $("#embed").append("<iframe src='https://youtube.com/embed/" + frames[i] + "' width='100%' height='480' frameborder='0' allowfullscreen></iframe>");
+      }
+    }
+      
+  </script>
+</html>
+
+

@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <base target="_top">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
+    <link rel="stylesheet" href="https://ssl.gstatic.com/docs/script/css/add-ons.css">
+    <style>
+      body { font-family: sans-serif }
+      #search-result > img { width:320px; height: 180px; display: block; margin: 15px auto 0; }
+      #embed { width:100%; font-family:sans-serif; }
+      #srcSelect { width:100%; margin-bottom: 10px; }
+      #srcSelect span { 
+        display: inline-block; 
+        margin-right: 15px; 
+        color:rgba(255, 255, 255, 1); 
+        background-color: rgba(0,0,255,0.8);
+        cursor:pointer; 
+        border-radius:3px;
+        border:1px solid rgba(0,0,180,0.8);
+        padding: 12px;
+      }
+      #srcSelect span:hover { color:rgba(0, 0, 180, 1); background-color: rgba(255,255,255,0.8); }
+    </style>
+  </head>
+  <body>
+  <div id="embed">
+    <p><b>DocuTube</b> will show videos linked in your document here so you don't have to leave your work.</p>
+    <button id="load-video-btn" class="action" onclick='loadVideos()'>Load Videos</button>
+  </div>
+  </body>
+  <script type="text/javascript">     
+  
+    function loadVideos() {
+      
+      google.script.run.withSuccessHandler(showFrames).DTApi('DT', 'getVideos');
+    
+    }
+    
+    $("#doc").click(function() {
+    console.log('clicked doc');
+      google.script.run.withSuccessHandler(showFrames).getVideos();
+    })
+    
+    $("#comments").click(function() {
+      google.script.run.withSuccessHandler(showFrames).getCommentData();
+    });
+    
+    function showFrames(frames) {
+   
+      $("#embed").empty();
+      console.log(frames.length);
+      for(var i=0; i<frames.length; i++) {
+        $("#embed").append("<iframe src='https://youtube.com/embed/" + frames[i] + "' width='100%' height='auto' frameborder='0' allowfullscreen></iframe>");
+      }
+    }
+      
+  </script>
+</html>
+
+
