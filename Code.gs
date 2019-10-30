@@ -33,14 +33,7 @@ function showSidebar() {
   DocumentApp.getUi().showSidebar(app);
 }
 
-function dtInit() {
-  
-  
-}
-
 function showPopup() {
   var app = HtmlService.createHtmlOutputFromFile("popup").setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL).setTitle("DocuTube Search").setWidth(1000).setHeight(500);
   DocumentApp.getUi().showModalDialog(app, "DocuTube");
 }
-
-

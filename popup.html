@@ -182,7 +182,7 @@
      
    }
      
-   function previewEmbed(id) {
+   function previewEmbed(videoId, resource) {
 
      google.script.run.withSuccessHandler(function(result){
      
@@ -204,7 +204,7 @@
                              <input type='radio' id='toggle' name='embed-type' value='string' /><label for='toggle'>Text</label> \
                              <input type='text' id='link-text' name='link-text' value='" + title + "' /> \
                              <div id='settings-action'> \
-                             <button class='action' onclick='embed(this.parentNode.parentNode.parentNode.dataset.vidid)'>Get Video</button> \
+                             <button class='action' onclick='embed(this.parentNode.parentNode.parentNode.dataset.videoid)'>Get Video</button> \
                              <button onclick='this.parentNode.parentNode.parentNode.parentNode.removeChild(this.parentNode.parentNode.parentNode)'>Cancel</button> \
                              </div>\
                            </div>";
@@ -215,15 +215,15 @@
        
        let previewContainer = document.createElement('div');
        previewContainer.setAttribute('class', 'preview-container');
-       previewContainer.dataset.vidid = data.vidId;
-       previewContainer.innerHTML = data.data.embedHtml;
+       previewContainer.dataset.videoid = data.videoId;
+       previewContainer.innerHTML = data.player.embedHtml;
        container.appendChild(previewContainer);
        
-       previewContainer.insertAdjacentHTML('beforeend', settings(id, data.title));
+       previewContainer.insertAdjacentHTML('beforeend', settings(data.id, data.title));
        
        window.scroll({top: 0, left: 0, behavior: 'smooth'});
        
-     }).DTApi('DT', 'preview', id);
+     }).DTApi('DT', 'preview', videoId, resource);
    
    }
    
