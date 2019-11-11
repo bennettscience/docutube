@@ -16,12 +16,84 @@ var DTUtils = (function() {
     
     ui.showModalDialog(app, 'DocuTube')
   }
+  
+  utils.buildEmbedUrl = function(resourceType, id) {
+    
+    var url;
+   
+    if(resourceType === "channel") {
+      url = 'https://youtube.com/channel/' + id;
+    } else if(resourceType === "playlist") {
+      url = 'https://youtube.com/playlist?list=' + id;
+    } else if(resourceType === "video") {
+      url = 'https://youtu.be/' + id;
+    }
+    
+    return url;
+  }
+  
+  // Find and return a cached item
+  utils.getCachedResource = function(cacheKey, resourceId, resourceType) {
+    
+    cacheKey = cacheKey || null;
+    resourceId = resourceId || null;
+    resourceType = resourceType || null;
+    
+    var cache;
+    
+    cache = DTCache.get(cacheKey);
+    
+    var resource = cache.items.find(function(el) {
+      if(resourceType === "channel") {
+        return el.id.channelId === resourceId;
+      } else if(resourceType === "playlist") {
+        return el.id.playlistId === resourceId;
+      } else if(resourceType === "video") {
+        return el.id.videoId === resourceId;
+      }
+    });
+    
+    return resource;
+    
+  }
+  
+  utils.getResourcePreview = function(args, resource, resourceType) {
+    
+    var preview;
+    
+    if(resourceType === "video" || resourceType === undefined) {
+      preview = YouTube.Videos.list("player", args);
+      DTCache.store(preview.items[0].id, preview, 3600);
+    } else if(resourceType === "playlist") {
+      preview = YouTube.Playlists.list("player", args);
+      // Playlists come back linked via http. Convert to https before returning.
+      preview.items[0].player.embedHtml = utils.secureHttp(preview.items[0].player.embedHtml);
+      DTCache.store(preview.items[0].id, resource, 3600);
+    } else if(resourceType === "channel") {
+      // These can be pulled from the cache
+      preview = resource.snippet.thumbnails;
+      DTCache.store(resource.snippet.channelId, resource, 3600);
+    }
+   
+    return preview;
+  }
+  
+  utils.secureHttp = function(httpUrl) {
+    
+    var re = /http/gm;
+    
+    var httpsUrl = httpUrl.replace(re, 'https');
+    
+    return httpsUrl;
+    
+  }
 
   utils.shorten = function(string) {
     
     return Utilities.base64Encode(Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_1, string));
     
   }
+
   
   /*********************** GET ALL LINKS ************************/
   // Loop through all elements in the Doc and return all links
@@ -57,43 +129,45 @@ var DTUtils = (function() {
   
     // Extract a link from a TEXT element
     if (element.getType() === DocumentApp.ElementType.TEXT) {
-      Logger.log('Found text!');
+
       var textObj = element.editAsText();
       
       if(this.buildUrl(textObj)) {        
-        Logger.log('Adding an URL from text');
+
         links.push(this.buildUrl(textObj));
+        
       }
       
     }
     
     // Handle an INLINE_IMAGE with a link attached.
     else if(element.getType() === DocumentApp.ElementType.INLINE_IMAGE) {
-      Logger.log('found an image!');
+
       url = element.getLinkUrl();
+      
       if(url != null) {
         url = String(url);
-        Logger.log('Adding an URL from an image');
         links.push(url);
       }
+      
     }
     
     else if(element.getType() === DocumentApp.ElementType.INLINE_DRAWING) {
-      Logger.log('Found a drawing!');
+
       url = element.getLinkUrl();
+      
       if(url != null) {
         url = String(url);
-        Logger.log('Adding an URL from a drawing');
         links.push(url);
       }
+      
     }
     
     else if(element.getType() === DocumentApp.ElementType.FOOTNOTE) {
-      Logger.log('Found a footnote!');
+
       var footnote = element.getFootnoteContents().editAsText();
       
       if(this.buildUrl(footnote)) {   
-        Logger.log('Adding an URL from a footnote')
         links.push(this.buildUrl(footnote));
       }
       

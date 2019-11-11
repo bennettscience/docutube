@@ -21,11 +21,9 @@ var DT = (function(dt) {
     pageToken = args.pageToken || "";
     key = args.key || Number(0);
     
-    var cacheKey = (term+key);
+    var cacheKey = (term+key) + '-' + args.types.join('-');
     
     container.prevKey = (key-1);
-    
-    Logger.log('Checking cache for ' + cacheKey);
     
     data = DTCache.get(cacheKey) || false;
     
@@ -40,13 +38,10 @@ var DT = (function(dt) {
         'safeSearch': 'strict',
         'type': searchArgs,
         'pageToken': pageToken,
+        'order': 'rating',
       }
     
-      Logger.log("get the data from Youtube")
       data = YouTube.Search.list('snippet', opts);
-      
-      // Store the results in the cache for 60 minutes
-      Logger.log('Cacheing ' + cacheKey);
       
       DTCache.store(cacheKey, JSON.stringify(data), 3600);
       
@@ -74,26 +69,28 @@ var DT = (function(dt) {
     return JSON.stringify(container);
   };
   
-  dt.preview = function(id, resource) {
+  dt.preview = function(cacheKey, resourceId, resourceType) {
     
-    var query;
+    var cache,item, preview
     
     var args = {
-      "id": id,
+      "id": resourceId,
     }
     
-    // TODO: Return a preview baed on ther type of resource
+    // The snippet costs 2-4 units and is already cached. Find it in the
+    // cache instead of querying the API again.
+    item = DTUtils.getCachedResource(cacheKey, resourceId, resourceType);
     
-    query = YouTube.Videos.list("player,snippet", args);
+    preview = DTUtils.getResourcePreview(args, item, resourceType);
     
-    // Store this in the cache by video ID
-    DTCache.store(query.items[0].id, query, 3600);
-    
+    // Build the result first
     var result = {
       "success": true,
-      "player": query.items[0].player,
-      "videoId": id,
-      "title": query.items[0].snippet.title,
+      "preview": preview,
+      "resourceId": resourceId,
+      "title": item.snippet.title,
+      "resourceType": resourceType,
+      "cacheKey": cacheKey,
     }
     
     return JSON.stringify(result);
@@ -101,38 +98,34 @@ var DT = (function(dt) {
   }
   
   // TODO: get video data from Cache
-  dt.embed = function(id, prefs) {
+  dt.embed = function(cacheKey, prefs, resourceId, resourceType) {
     
-    var insert, insertVal, newPosition, video;
-    var args = {
-      "id": id,
-    }
-    
-    // Get the requested video from the Cache
-    var cache = DTCache.get(id)
-    
-    if(cache) {
-      Logger.log('Cached video found, using that data');
-      video = cache;
-    } else {
-      video = YouTube.Videos.list("snippet", args);
-    }
-    
-    var url = "https://youtu.be/" + video.items[0].id;
+    // Parse the prefs and cacheKeys
+    prefs = prefs || {};
+    cacheKey = cacheKey || null;
     
     var doc = DocumentApp.getActiveDocument();
     var cursor = doc.getCursor();
     
+    var insert, insertVal, item, newPosition, url, video;
+    
+    var args = {
+      "id": resourceId,
+    }
+    
+    item = DTUtils.getCachedResource(cacheKey, resourceId, resourceType)
+    url = DTUtils.buildEmbedUrl(resourceType, resourceId)
+
+    // Return the correct resource based on user input
     if(prefs.type === "copy") {
       return url;
-    }
-    else if(prefs.type === "thumbnail") {
-      insertVal = video.items[0].snippet.thumbnails.medium.url;
-      var blob = UrlFetchApp.fetch(video.items[0].snippet.thumbnails.medium.url).getBlob();
+    } else if(prefs.type === "thumbnail") {
+      insertVal = item.snippet.thumbnails.medium.url;
+      var blob = UrlFetchApp.fetch(item.snippet.thumbnails.medium.url).getBlob();
       cursor.insertInlineImage(blob).setLinkUrl(url)
     } else if(prefs.type === "string") {
       if(prefs.string === "") {
-        insertVal = video.items[0].snippet.title;
+        insertVal = item.snippet.title;
       } else {
         insertVal = prefs.string
       }
@@ -169,10 +162,10 @@ var DT = (function(dt) {
     
     // Get the video information and break it down into an object
     var html = " \
-        <div title='" + video.snippet.title + "' class='video-container' style='background-image:url(\"" + video.snippet.thumbnails.medium.url + "\");' data-type='" + resourceType +"' data-videoid='" + videoId +"'> \
+        <div title='" + video.snippet.title + "' class='video-container' style='background-image:url(\"" + video.snippet.thumbnails.medium.url + "\");' data-cachekey='" + cacheKey + "' data-resource='" + resourceType +"' data-videoid='" + videoId +"'> \
          <img class='type-icon' src='" + icon + "' /> \
          <div class='action-container'> \
-           <span class='embed' data-method='embed' onclick='previewEmbed(this.parentNode.parentNode.dataset.videoid, this.parentNode.parentNode.dataset.resource, )'>Preview & Insert</span> \
+           <span class='embed' data-method='embed' onclick='previewEmbed(this.parentNode.parentNode.dataset.cachekey, this.parentNode.parentNode.dataset.videoid, this.parentNode.parentNode.dataset.resource)'>Preview & Insert</span> \
          </div> \
        </div>"
     

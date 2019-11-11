@@ -45,9 +45,18 @@
         position: relative;
       }
       
-      #preview iframe { vertical-align: middle; }
+      #preview img {
+        width: 45%;
+        height: auto;
+      }
+      
+      #preview iframe, img { vertical-align: middle; }
       
       #preview iframe + .settings {
+        margin-left: 30px;
+      }
+      
+      #preview img + .settings {
         margin-left: 30px;
       }
       
@@ -152,9 +161,9 @@
   <div id="search-result"></div>
   </body>
   <script type="text/javascript"> 
-   function embed(id) {
+   function embed(cacheKey, resourceId, resourceType) {
    
-     console.log(id);
+     console.log(cacheKey, resourceId, resourceType);
      
      var text;
      
@@ -171,6 +180,8 @@
      
      google.script.run.withSuccessHandler(function(url) {
        
+       if(!url) return;
+       
          navigator.permissions.query({name: "clipboard-write"}).then(result => {
           if (result.state == "granted" || result.state == "prompt") {
             navigator.clipboard.writeText(url);
@@ -178,19 +189,23 @@
           }
         });
      
-     }).DTApi('DT', 'embed', id, prefs);
+     }).DTApi('DT', 'embed', cacheKey, prefs, resourceId, resourceType);
      
    }
      
-   function previewEmbed(videoId, resource) {
+   function previewEmbed(cacheKey, resourceId, resourceType) {
+   
+     console.log(cacheKey, resourceId, resourceType);
 
      google.script.run.withSuccessHandler(function(result){
      
        let container = document.querySelector("#preview");
        
-       console.log(container);
-       
        let data = JSON.parse(result);
+       
+       console.log(data)
+       
+       console.log('Trying to preview: ' + Object.keys(data))
        
        let settings = function(id, title) {
          
@@ -204,7 +219,7 @@
                              <input type='radio' id='toggle' name='embed-type' value='string' /><label for='toggle'>Text</label> \
                              <input type='text' id='link-text' name='link-text' value='" + title + "' /> \
                              <div id='settings-action'> \
-                             <button class='action' onclick='embed(this.parentNode.parentNode.parentNode.dataset.videoid)'>Get Video</button> \
+                             <button class='action' onclick='embed(this.parentNode.parentNode.parentNode.dataset.cachekey, this.parentNode.parentNode.parentNode.dataset.resourceid, this.parentNode.parentNode.parentNode.dataset.resourcetype)'>Get Video</button> \
                              <button onclick='this.parentNode.parentNode.parentNode.parentNode.removeChild(this.parentNode.parentNode.parentNode)'>Cancel</button> \
                              </div>\
                            </div>";
@@ -215,15 +230,21 @@
        
        let previewContainer = document.createElement('div');
        previewContainer.setAttribute('class', 'preview-container');
-       previewContainer.dataset.videoid = data.videoId;
-       previewContainer.innerHTML = data.player.embedHtml;
+       previewContainer.dataset.resourceid = data.resourceId;
+       previewContainer.dataset.resourcetype = data.resourceType;
+       previewContainer.dataset.cachekey = data.cacheKey;
+       if(data.resourceType === "channel") {
+         previewContainer.innerHTML = '<img src="' + data.preview.high.url + '" />';
+       } else {
+         previewContainer.innerHTML = data.preview.items[0].player.embedHtml;
+       }
        container.appendChild(previewContainer);
        
        previewContainer.insertAdjacentHTML('beforeend', settings(data.id, data.title));
        
        window.scroll({top: 0, left: 0, behavior: 'smooth'});
        
-     }).DTApi('DT', 'preview', videoId, resource);
+     }).DTApi('DT', 'preview', cacheKey, resourceId, resourceType);
    
    }
    
@@ -243,6 +264,8 @@
       let args = {};
       args.types = [];
       
+      // TODO: Validate that there is at least _one_ checked box
+      // Default to videos
       checked.forEach(function(el) {
         args.types.push(el.value);
       });
@@ -256,6 +279,12 @@
       google.script.run.withSuccessHandler(function(result) {
       container.innerText = '';
         let data = JSON.parse(result);
+        
+        console.log(data.data.length);
+        
+        if(data.data.length === 0) {
+          container.insertAdjacentHTML('beforeend', '<p>No videos found in your search! Try another search term.</p>');
+        }
         
         let videoContainers = [];
         

@@ -6,7 +6,7 @@ var DTCache = (function() {
   
   cache.init = function() {
     
-    return 
+    return true;
     
   }
 
@@ -24,12 +24,10 @@ var DTCache = (function() {
     
     if(docCache.get(key)) {
       
-      Logger.log("returning cached results");
       return JSON.parse(docCache.get(key));
       
     } else {
       
-      Logger.log("no cache, return false");
       return false;
       
     }
