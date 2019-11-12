@@ -5,22 +5,25 @@ var DTCache = (function() {
   cache.self = this;
   
   cache.init = function() {
-    
-    return true;
+    const docCache = CacheService.getDocumentCache();
+    return docCache;
     
   }
-
-  const docCache = CacheService.getDocumentCache();
   
   // Store an etag with a search key
   cache.store = function(key, value, expiration) {
+    
+    const docCache = cache.init();
     
     docCache.put(key, value, expiration);
     
   }
   
   // Find a cached search by key
+  // return - parsed JSON data
   cache.get = function(key) {
+    
+    const docCache = cache.init();
     
     if(docCache.get(key)) {
       

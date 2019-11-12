@@ -5,9 +5,18 @@
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
     <link rel="stylesheet" href="https://ssl.gstatic.com/docs/script/css/add-ons.css">
     <style>
+    
+      #progress {
+        display:none;
+        position: absolute;
+        right: 70px;
+        top: -5.5px;
+      }
+        
       .search {
         width: 80%;
         margin: 0 auto;
+        position:relative;
       }
       
       .search > input[type="text"] { width: 60%; margin-right: 10px; }
@@ -41,8 +50,13 @@
       .settings { 
         display: inline-block; 
         vertical-align: middle;
-        width: 25%;
+        width: 35%;
         position: relative;
+      }
+      
+      #result {
+        display: inline-block;
+        margin-left: 15px;
       }
       
       #preview img {
@@ -147,6 +161,21 @@
   <input type="text" id="search-input" value=""/>
   <button id="search-btn" class="action" onclick="search(null)">Search</button>
   <button onclick="document.querySelector('#search-result').innerHTML = ''">Clear</button>
+  <svg id="progress" version="1.1" id="loader-1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px" width="40px" height="40px" viewBox="0 0 40 40" enable-background="new 0 0 40 40" xml:space="preserve">
+      <path opacity="0.2" fill="#00d" d="M20.201,5.169c-8.254,0-14.946,6.692-14.946,14.946c0,8.255,6.692,14.946,14.946,14.946
+        s14.946-6.691,14.946-14.946C35.146,11.861,28.455,5.169,20.201,5.169z M20.201,31.749c-6.425,0-11.634-5.208-11.634-11.634
+        c0-6.425,5.209-11.634,11.634-11.634c6.425,0,11.633,5.209,11.633,11.634C31.834,26.541,26.626,31.749,20.201,31.749z"/>
+      <path fill="#00d" d="M26.013,10.047l1.654-2.866c-2.198-1.272-4.743-2.012-7.466-2.012h0v3.312h0
+        C22.32,8.481,24.301,9.057,26.013,10.047z">
+      <animateTransform attributeType="xml"
+        attributeName="transform"
+        type="rotate"
+        from="0 20 20"
+        to="360 20 20"
+        dur="0.5s"
+        repeatCount="indefinite"/>
+      </path>
+    </svg>
   <div id="search-args">
     <label><input type="checkbox" name="queryArg" value="video" checked="checked"/>Videos</label>
     <label><input type="checkbox" name="queryArg" value="channel" />Channels</label>
@@ -163,6 +192,9 @@
   <script type="text/javascript"> 
    function embed(cacheKey, resourceId, resourceType) {
    
+     const progress = document.querySelector("#progress");
+     progress.style.display = "block";
+   
      console.log(cacheKey, resourceId, resourceType);
      
      var text;
@@ -178,22 +210,34 @@
        "string": text
      };
      
-     google.script.run.withSuccessHandler(function(url) {
+     google.script.run.withSuccessHandler(function(data) {
        
-       if(!url) return;
+       if(data.success) {
+         document.querySelector('#result').innerText = "Video linked!";
+         setTimeout(function() {
+           document.querySelector('#result').innerText = "";
+           }, 3000);
+       }
        
+       if(data.type === "copy" && data.url) {
          navigator.permissions.query({name: "clipboard-write"}).then(result => {
-          if (result.state == "granted" || result.state == "prompt") {
-            navigator.clipboard.writeText(url);
-            alert('URL copied to clipboard');
-          }
-        });
+           if (result.state == "granted" || result.state == "prompt") {
+              navigator.clipboard.writeText(data.url);
+              alert('URL copied to clipboard');
+            }
+          });
+        }
+        
+        progress.style.display = "none";
      
      }).DTApi('DT', 'embed', cacheKey, prefs, resourceId, resourceType);
      
    }
      
    function previewEmbed(cacheKey, resourceId, resourceType) {
+   
+     const progress = document.querySelector("#progress");
+     progress.style.display = "block";
    
      console.log(cacheKey, resourceId, resourceType);
 
@@ -212,7 +256,7 @@
          const template = "<div class='settings'> \
                              <h2>Settings</h2> \
                              <p>How do you want to link your video?</p> \
-                             <input type='radio' id='copy-radio' name='embed-type' value='copy' /><label for='copy-radio'>Copy link</label/> \
+                             <input type='radio' id='copy-radio' name='embed-type' value='copy' /><label for='copy-radio'>Copy link to clipboard</label/> \
                              <br /> \
                              <input type='radio' id='thumbnail-radio' name='embed-type' value='thumbnail' /><label for='thumbnail-radio'>Thumbnail</label> \
                              <br /> \
@@ -220,7 +264,8 @@
                              <input type='text' id='link-text' name='link-text' value='" + title + "' /> \
                              <div id='settings-action'> \
                              <button class='action' onclick='embed(this.parentNode.parentNode.parentNode.dataset.cachekey, this.parentNode.parentNode.parentNode.dataset.resourceid, this.parentNode.parentNode.parentNode.dataset.resourcetype)'>Get Video</button> \
-                             <button onclick='this.parentNode.parentNode.parentNode.parentNode.removeChild(this.parentNode.parentNode.parentNode)'>Cancel</button> \
+                             <button onclick='this.parentNode.parentNode.parentNode.parentNode.removeChild(this.parentNode.parentNode.parentNode)'>Close</button> \
+                             <div id='result'></div> \
                              </div>\
                            </div>";
           
@@ -242,6 +287,8 @@
        
        previewContainer.insertAdjacentHTML('beforeend', settings(data.id, data.title));
        
+       progress.style.display = "none";
+       
        window.scroll({top: 0, left: 0, behavior: 'smooth'});
        
      }).DTApi('DT', 'preview', cacheKey, resourceId, resourceType);
@@ -249,6 +296,9 @@
    }
    
    function search(page, key) {
+   
+      const progress = document.querySelector("#progress");
+      progress.style.display = "block";
 
       // If there's a page token, set it
       var pageToken = page || "";
@@ -317,6 +367,7 @@
         }
         
         document.querySelector('#pagination').style.display = 'block';
+        progress.style.display = "none";
 
       }).DTApi('DT', 'search', term, args);
     }

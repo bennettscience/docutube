@@ -12,7 +12,12 @@ var DT = (function(dt) {
   }
   
   // Search youtube for video
+  // Args expects an array of terms 
   dt.search = function(term, args) {
+    
+    if(!term) { 
+      return new Error('Please enter a search term');
+    }
     
     var results = [];
     var container = {};
@@ -118,11 +123,12 @@ var DT = (function(dt) {
 
     // Return the correct resource based on user input
     if(prefs.type === "copy") {
-      return url;
+      return {success: true, type: "copy", url: url};
     } else if(prefs.type === "thumbnail") {
       insertVal = item.snippet.thumbnails.medium.url;
       var blob = UrlFetchApp.fetch(item.snippet.thumbnails.medium.url).getBlob();
-      cursor.insertInlineImage(blob).setLinkUrl(url)
+      cursor.insertInlineImage(blob).setLinkUrl(url);
+      insert = cursor.getElement();
     } else if(prefs.type === "string") {
       if(prefs.string === "") {
         insertVal = item.snippet.title;
@@ -136,11 +142,14 @@ var DT = (function(dt) {
     
     if(prefs.type === "string") {
       newPosition = doc.newPosition(insert, insertVal.length);
+      doc.setCursor(newPosition);
     } else {
       newPosition = doc.newPosition(insert, 1);
     }
     
     doc.setCursor(newPosition);
+    
+    return {success: true, url: url};
     
   }
    
