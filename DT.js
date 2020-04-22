@@ -128,6 +128,7 @@ var DT = (function(dt) {
       insertVal = item.snippet.thumbnails.medium.url;
       var blob = UrlFetchApp.fetch(item.snippet.thumbnails.medium.url).getBlob();
       cursor.insertInlineImage(blob).setLinkUrl(url);
+      Logger.log(blob)
       insert = cursor.getElement();
     } else if(prefs.type === "string") {
       if(prefs.string === "") {
@@ -135,7 +136,9 @@ var DT = (function(dt) {
       } else {
         insertVal = prefs.string
       }
-      insert = cursor.insertText(insertVal).setLinkUrl(cursor.getOffset(), insertVal.length-1, url);
+      Logger.log(cursor)
+      Logger.log(insertVal)
+      insert = cursor.insertText(insertVal).setLinkUrl(cursor.getOffset()+1, insertVal.length-1, url);
     } else {
       insertVal = video.items[0].snippet.title;
     }
@@ -155,8 +158,14 @@ var DT = (function(dt) {
    
   dt.makeThumbnail = function(video, cacheKey) {
     
-    var icon, videoId;
+    var icon, thumbUrl, videoId;
     var resourceType = video.id.kind.split("#")[1];
+    
+    if(video.snippet.thumbnails.medium) {
+      thumbUrl = video.snippet.thumbnails.medium.url;
+    } else {
+      thumbUrl = video.snippet.thumbnails.medium.url;
+    }
     
     if(resourceType == "video") {
       icon = "https://image.flaticon.com/icons/svg/174/174883.svg";
@@ -169,9 +178,11 @@ var DT = (function(dt) {
       videoId = video.id.channelId;
     }
     
+    Logger.log(video.snippet.thumbnails.medium.url)
+    
     // Get the video information and break it down into an object
     var html = " \
-        <div title='" + video.snippet.title + "' class='video-container' style='background-image:url(\"" + video.snippet.thumbnails.medium.url + "\");' data-cachekey='" + cacheKey + "' data-resource='" + resourceType +"' data-videoid='" + videoId +"'> \
+        <div title='" + video.snippet.title + "' class='video-container' style='background-image:url(\"" + thumbUrl + "\");' data-cachekey='" + cacheKey + "' data-resource='" + resourceType +"' data-videoid='" + videoId +"'> \
          <img class='type-icon' src='" + icon + "' /> \
          <div class='action-container'> \
            <span class='embed' data-method='embed' onclick='previewEmbed(this.parentNode.parentNode.dataset.cachekey, this.parentNode.parentNode.dataset.videoid, this.parentNode.parentNode.dataset.resource)'>Preview & Insert</span> \
@@ -198,6 +209,8 @@ var DT = (function(dt) {
     
     links = docLinks.concat(commentLinks);
     
+    Logger.log(links)
+    
     // If there are no links, give a helpful tip.
     if(links.length === 0) {
       frames.push("<p>No videos found.</p>");
@@ -205,11 +218,36 @@ var DT = (function(dt) {
     
     // TODO: Check the returned link with regex
     for(var i=0; i<links.length; i++) {
+      var video = {};
       Logger.log(links[i]);
-      // https://stackoverflow.com/a/31711517/2278429
-      var re = /(?:https?:\/\/)?(?:www\.)?youtu\.?be(?:\.com)?\/?.*(?:watch|embed)?(?:.*v=|v\/|\/)([\w\-_]+)\&?/;
-      frames.push(links[i].match(re)[1]);
+      
+      var re = /(youtube|youtu.be)/
+      
+      // Filter out any URLs that are not from YouTube
+      if(links[i].match(re)) {
+      
+        var type = DTUtils.getResourceTypeFromUrl(links[i]);
+        Logger.log(type)
+        
+        
+        // Only return videos and playlists
+        if(type) {
+          // https://stackoverflow.com/a/31711517/2278429
+          var re = /^(?:https?:\/\/)?(?:www\.)?youtu\.?be(?:\.com)?.*?(?:v|list)=(.*?)(?:&|$)|^(?:https?:\/\/)?(?:www\.)?youtu\.?be(?:\.com)?(?:(?!=).)*\/(.*)$/;
+          if(!links[i].match(re)[1]) {
+            // youtu.be/ videos are not returning capture group 1.
+            // Hotfix by returning group 2 for the time being
+            video.id = links[i].match(re)[2];
+          } else {
+            video.id = links[i].match(re)[1];
+          }
+          video.type = type;
+          frames.push(video);
+        }
+      }
     }
+    
+    Logger.log(frames)
     
     return frames;
     

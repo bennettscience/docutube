@@ -36,21 +36,23 @@
     
     }
     
-    $("#doc").click(function() {
-    console.log('clicked doc');
-      google.script.run.withSuccessHandler(showFrames).getVideos();
-    })
-    
-    $("#comments").click(function() {
-      google.script.run.withSuccessHandler(showFrames).getCommentData();
-    });
-    
     function showFrames(frames) {
    
-      $("#embed").empty();
-      console.log(frames.length);
+      const container = document.querySelector("#embed");
+      container.innerHTML = "";
+      
+      console.log(frames);
+      
       for(var i=0; i<frames.length; i++) {
-        $("#embed").append("<iframe src='https://youtube.com/embed/" + frames[i] + "' width='100%' height='auto' frameborder='0' allowfullscreen></iframe>");
+
+        if(frames[i].type === "video") {
+          container.insertAdjacentHTML("beforeend","<iframe src='https://youtube.com/embed/" + frames[i].id + "' width='100%' height='auto' frameborder='0' allowfullscreen></iframe><hr />");
+        } else if(frames[i].type === "playlist") {
+          container.insertAdjacentHTML("beforeend", "<iframe src='https://youtube.com/embed/videoseries?list=" + frames[i].id +"' width='100%' height='auto' frameborder='0' allowfullscreen></iframe><hr />");
+        } else if(frames[i].type === "channel") {
+          container.insertAdjacentHTML("beforeend", "<h3>No preview available. <a href='https://youtube.com/channel/" + frames[i].id + "' target='_blank'>Go to the channel</h3><hr />");
+        }
+        
       }
     }
       

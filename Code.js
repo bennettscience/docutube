@@ -1,9 +1,10 @@
 /**
-  * @OnlyCurrentDoc
-*/
+ * @OnlyCurrentDoc
+ */
 
 function onInstall(e) {
   onOpen(e);
+  Logger.log(e.authMode);
 }
 
 /******************* UI **************************/
@@ -12,6 +13,7 @@ function onInstall(e) {
 
 function onOpen(e) {
   var ui = DocumentApp.getUi();
+  
   ui.createAddonMenu().addItem('Search', 'showPopup').addItem("Watch", "showSidebar").addSeparator().addItem('About DocuTube', 'showAbout')
     .addToUi();
 }
@@ -23,7 +25,7 @@ function DTApi(namespace, method) {
 }
 
 function showAbout() {
-  var app = HtmlService.createHtmlOutputFromFile("about").setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL).setTitle("About DocuTube");
+  var app = HtmlService.createHtmlOutputFromFile("about").setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL).setTitle("About DocuTube").setWidth(600).setHeight(300);
   DocumentApp.getUi().showModalDialog(app, "About DocuTube");
 }
 
