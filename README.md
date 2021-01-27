@@ -26,4 +26,5 @@ install it from there yet. In the meantime, you can copy this repo into your own
 script editor and try it yourself.
 
 [Homepage](https://ohheybrian.com/docutube)
+
 [Privacy and Terms](https://dev.ohheybrian.com/privacy/docutube.html)
