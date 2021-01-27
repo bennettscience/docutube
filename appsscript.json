@@ -5,10 +5,6 @@
       "userSymbol": "Drive",
       "serviceId": "drive",
       "version": "v2"
-    }, {
-      "userSymbol": "YouTube",
-      "serviceId": "youtube",
-      "version": "v3"
     }]
   },
   "webapp": {
@@ -16,6 +12,6 @@
     "executeAs": "USER_DEPLOYING"
   },
   "exceptionLogging": "STACKDRIVER",
-  "oauthScopes": ["https://www.googleapis.com/auth/documents.currentonly","https://www.googleapis.com/auth/drive.readonly", "https://www.googleapis.com/auth/drive.file", "https://www.googleapis.com/auth/script.container.ui", "https://www.googleapis.com/auth/youtube.readonly", "https://www.googleapis.com/auth/script.external_request"],
+  "oauthScopes": ["https://www.googleapis.com/auth/documents.currentonly","https://www.googleapis.com/auth/drive.readonly", "https://www.googleapis.com/auth/drive.file", "https://www.googleapis.com/auth/script.container.ui", "https://www.googleapis.com/auth/script.external_request"],
   "runtimeVersion": "V8"
 }

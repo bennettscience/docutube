@@ -14,7 +14,7 @@ function onInstall(e) {
 function onOpen(e) {
   var ui = DocumentApp.getUi();
   
-  ui.createAddonMenu().addItem('Search', 'showPopup').addItem("Watch", "showSidebar").addSeparator().addItem('About DocuTube', 'showAbout')
+  ui.createAddonMenu().addItem("Watch", "showSidebar").addSeparator().addItem('About DocuTube', 'showAbout')
     .addToUi();
 }
 
@@ -33,9 +33,4 @@ function showAbout() {
 function showSidebar() {
   var app = HtmlService.createHtmlOutputFromFile("sidebar").setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL).setTitle("DocuTube Watch");
   DocumentApp.getUi().showSidebar(app);
-}
-
-function showPopup() {
-  var app = HtmlService.createHtmlOutputFromFile("popup").setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL).setTitle("DocuTube Search").setWidth(1000).setHeight(500);
-  DocumentApp.getUi().showModalDialog(app, "DocuTube");
 }

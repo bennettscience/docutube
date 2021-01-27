@@ -1,2 +1,5 @@
 DTTests.js
 UnitTesting.js
+.clasp.json
+.claspignore
+.DS_Store

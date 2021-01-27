@@ -78,8 +78,9 @@ var DTUtils = (function() {
     return preview;
   }
   
-  utils.getResourceTypeFromUrl = function(url) {
+  utils.getTypeFromUrl = function(url) {
     
+    // Check the URL for the type keys
     var re = /(v|playlist|channel)/
     
     if(url.match(re) && url.match(re)[0] === "playlist") {
@@ -92,6 +93,8 @@ var DTUtils = (function() {
     
   }
   
+  // Videos won't embed if an http scheme is used. This forces any
+  // http string to https.
   utils.secureHttp = function(httpUrl) {
     
     var re = /http/gm;
@@ -211,33 +214,6 @@ var DTUtils = (function() {
   }
   
   utils.getCommentVideos = function() {
-    
-    // Manually call the Drive API because the built-in service is broken
-//    const fileId = DocumentApp.getActiveDocument().getId();
-//    const key = ScriptApp.getOAuthToken();
-//    const driveUrl = `https://www.googleapis.com/drive/v3/files/${fileId}/comments?fields=kind%2Ccomments(content)&key=${key}`
-//    
-//    const request = UrlFetchApp.fetch(driveUrl, {
-//      headers: {
-//        'Authorization': `Bearer ${ScriptApp.getOAuthToken()}`
-//      }
-//    });
-//    
-//    const json = JSON.parse(request);
-//    var commentFrames = [];
-//    
-//    for(var i=0; i<json.comments.length; i++) {
-//      var comment = json.comments[i].content;
-//      
-//      // Do some regex checking
-//      // https://stackoverflow.com/a/31711517/2278429
-//      var re = /(?:https?:\/\/)?(?:www\.)?youtu\.?be(?:\.com)?\/?.*(?:watch|embed)?(?:.*v=|v\/|\/)([\w\-_]+)\&?/;
-//
-//      if(comment.match(re)) {
-//        commentFrames.push(comment.match(re)[0]);
-//      }
-//      
-//    }
 
     // Get the comments
     const docId = DocumentApp.getActiveDocument().getId();
