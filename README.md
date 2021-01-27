@@ -13,6 +13,12 @@ linked in comments, which is great for student feedback.
 
 ![Videos load in a sidebar so you can watch or listen without leaving the document.](img/docutubeWatch1.png)
 
+## What happend to the search tool?
+
+Search caused several issues, specifically when a user tried to open the Addon
+without having edit access to the doc. DocuTube Search will be run as a separate
+project on GitHub and released as a separate Addon.
+
 ## I'm in. Where can I get it?
 
 DocuTube is currently under review for the Google Apps Marketplace, so you can't
